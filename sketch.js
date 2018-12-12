@@ -10,19 +10,19 @@ This uses a pre-trained model of The Great Wave off Kanagawa and Udnie (Young Am
 === */
 
 let inputImg;
-let statusMsg;
-let transferBtn;
 let style1;
 let img;
 let poseNet;
 let poses = [];
 let canvas;
 let sparkle;
+let filter;
 
 function setup() {
     canvas = createCanvas(500, 500);
 
     sparkle = loadImage('img/sparkle.png');
+    filter = loadImage('img/filter2.png');
 
     // create an image using the p5 dom library
     // call modelReady() when it is loaded
@@ -35,7 +35,7 @@ function setup() {
     frameRate(1); // set the frameRate to 1 since we don't need it to be running quickly in this case
 
   // Create Style methods with pre-trained model
-  style1 = ml5.styleTransfer('models/run7ckpt', modelReady);
+  style1 = ml5.styleTransfer('models/run9ckpt', modelReady);
 
 }
 
@@ -44,7 +44,8 @@ function imageReady(){
     // set some options
     let options = {
         imageScaleFactor: 1,
-        minConfidence: 0.1
+        minConfidence: 0.1,
+        maxPoseDetections: 2
     }
     
     // assign poseNet
@@ -89,11 +90,9 @@ function drawKeypoints(callback)  {
     let pose = poses[i].pose;
     
     let nose = pose.keypoints[0];
-      // A keypoint is an object describing a body part (like rightArm or leftShoulder)
-
     let lefteye = pose.keypoints[1];
     let righteye = pose.keypoints[2];
-      // Only draw an ellipse is the pose probability is bigger than 0.2
+      
     drawEye(lefteye, nose);
     drawEye(righteye, nose);
     
@@ -134,17 +133,19 @@ function drawEye(keypoint, nose){
         noseToEye = noseToEye+10;
 
         //get eye area in square
-        var e = get(keypoint.position.x - (noseToEye/2), keypoint.position.y - (noseToEye/2), noseToEye, noseToEye);
-        
+        var e = get(keypoint.position.x - (noseToEye/2), keypoint.position.y - (noseToEye/4), noseToEye, noseToEye/2);
 
-        //create circle mask
-        imgMask = createGraphics(noseToEye, noseToEye);
-        imgMask.ellipse(noseToEye/2,noseToEye/2,noseToEye,noseToEye/2);
+        //create mask for eyes
+        //imgMask = createGraphics(noseToEye, noseToEye);
+        //imgMask.ellipse(noseToEye/2,noseToEye/2,noseToEye,noseToEye/2);
         
-        e.mask(imgMask);
-        //e.mask(filter);
+        //e.mask(imgMask);
 
-        image(e, keypoint.position.x - (noseToEye*1.5/2), keypoint.position.y - (noseToEye*2/2), noseToEye*1.5, noseToEye*2);
+        // use png for eye filter
+        e.mask(filter);
+
+
+        image(e, keypoint.position.x - (noseToEye*1.5/2), keypoint.position.y - (noseToEye*2/4), noseToEye*1.5, noseToEye);
         //ellipse(keypoint.position.x+5, keypoint.position.y+5, noseToEye+10, noseToEye+10);
         //ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
       }
@@ -155,7 +156,7 @@ function drawBlush(keypoint, nose){
 
     var noseToEye = nose.position.x-keypoint.position.x;
 
-    fill(255, 132, 183, 150);
+    fill(255, 132, 183, 100);
     noStroke();
     ellipse(keypoint.position.x - (noseToEye/2), keypoint.position.y + abs(noseToEye*0.8), noseToEye*1.2, noseToEye*0.7);
     //ellipse(keypoint.position.x, keypoint.position.y, 10, 10);
